@@ -7,5 +7,6 @@ package cn.zjx.user.controller;
  * @Create: 2022-07-20 13:58:29
  * @Version: 1.0
  **/
-public class TestController {
+public class UserController {
+
 }
