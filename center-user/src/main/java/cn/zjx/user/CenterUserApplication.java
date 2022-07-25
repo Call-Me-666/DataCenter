@@ -1,7 +1,9 @@
 package cn.zjx.user;
 
+import cn.zjx.common.jwt.util.JwtUtil;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class CenterUserApplication {
@@ -10,4 +12,8 @@ public class CenterUserApplication {
         SpringApplication.run(CenterUserApplication.class, args);
     }
 
+    @Bean
+    public JwtUtil getJwtUtil(){
+        return new JwtUtil();
+    }
 }
