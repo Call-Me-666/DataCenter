@@ -4,6 +4,7 @@ import cn.zjx.common.pojo.RequestResult;
 import cn.zjx.user.pojo.UserInfo;
 import cn.zjx.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Version: 1.0
  **/
 @RestController
-@RequestMapping("/User")
+@RequestMapping("/user")
 public class UserController {
     @Autowired
     UserService userService;
@@ -25,5 +26,10 @@ public class UserController {
     public RequestResult register(UserInfo userInfo){
         // 注册用户
         return userService.register(userInfo);
+    }
+
+    @GetMapping("/test")
+    public void Test(){
+        userService.test();
     }
 }

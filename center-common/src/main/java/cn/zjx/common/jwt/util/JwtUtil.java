@@ -30,7 +30,7 @@ public class JwtUtil {
      * 生成token
      *
      * @param claims  生成token的参数
-     * @param field 参数类型
+     * @param field 超时时间参数类型
      * @param outTime 设置超时时间
      * @return
      */

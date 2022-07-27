@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
  * @Author: zjx
  * @Create: 2022-07-21 10:16:23
  **/
-@Service
 public interface UserService {
     /**
      * 注册
@@ -39,4 +38,12 @@ public interface UserService {
      * @return
      */
     RequestResult logout();
+
+    /**
+     * 激活
+     * @return
+     */
+    RequestResult active(UserInfo userInfo);
+
+    void test();
 }

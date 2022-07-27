@@ -18,7 +18,7 @@ import java.util.List;
 @Component
 public class UserDao {
 
-    @Value("${dbName}")
+    @Value("${datasource.dbName}")
     String dbName;
 
     @Autowired
@@ -41,5 +41,9 @@ public class UserDao {
 
     public boolean logout(String uid){
         return userMapper.delete(tableName,uid);
+    }
+
+    public boolean active(String uid){
+        return userMapper.active(tableName,uid);
     }
 }
