@@ -5,6 +5,8 @@ import cn.zjx.common.pojo.RequestResult;
 import cn.zjx.user.dao.UserDao;
 import cn.zjx.user.pojo.UserInfo;
 import cn.zjx.user.service.UserService;
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,11 +48,13 @@ public class UserServiceImp implements UserService {
     @Override
     public RequestResult register(UserInfo userInfo) {
         RequestResult requestResult = new RequestResult();
-        // 判断用户名和密码
-        if(StringUtils.isNotBlank(userInfo.getName())||StringUtils.isNotBlank(userInfo.getPassword())){
+        // 判断用户名、密码、邮箱
+        if(StringUtils.isBlank(userInfo.getName())||
+                StringUtils.isBlank(userInfo.getPassword())||
+                StringUtils.isBlank(userInfo.getEmail())){
             requestResult.setSuccess(false);
-            requestResult.setMsg("用户名和密码不能为空！！！");
-            logger.warn("用户注册失败，用户名和密码为空！！！");
+            requestResult.setMsg("用户名、密码、邮箱不能为空！！！");
+            logger.warn("用户注册失败，用户名、密码、邮箱为空！！！");
             return requestResult;
         }
         // 判断用户名是否重复
@@ -82,7 +86,7 @@ public class UserServiceImp implements UserService {
     public RequestResult login(UserInfo userInfo) {
         RequestResult requestResult = new RequestResult();
         UserInfo user = userDao.login(userInfo.getName(), userInfo.getPassword());
-        if(user==null&&StringUtils.isNotBlank(user.getUid())){
+        if(user==null||StringUtils.isBlank(user.getUid())){
             requestResult.setSuccess(false);
             String msg = "登录失败，用户不存在！！！";
             requestResult.setMsg(msg);
@@ -123,7 +127,16 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public RequestResult active(UserInfo userInfo) {
+    public RequestResult active(String token) {
+        UserInfo userInfo = null;
+        DecodedJWT decodedJWT = jwtUtil.decodeToken(token);
+        if(decodedJWT==null){
+            Map<String, Claim> claims = decodedJWT.getClaims();
+            userInfo = new UserInfo();
+            userInfo.setUid(claims.get("uid").asString());
+            userInfo.setUid(claims.get("name").asString());
+            userInfo.setUid(claims.get("password").asString());
+        }
         RequestResult requestResult = new RequestResult();
         if(userInfo!=null&&StringUtils.isNotBlank(userInfo.getUid())){
             boolean isSuccess = userDao.active(userInfo.getUid());
@@ -161,10 +174,10 @@ public class UserServiceImp implements UserService {
         // 激活的token超时时间是1分钟
         String token = jwtUtil.generateToken(claimsMap,JwtUtil.MINUTE,1);
         // 服务地址为空的情况下，需要重新获取地址
-        if(!StringUtils.isNotBlank(localUrl)){
+        if(StringUtils.isBlank(localUrl)){
             localUrl = getServletUrl();
         }
-        sendEmail(userInfo.getEmail(), String.format("%s/user/%s",localUrl,token));
+        sendEmail(userInfo.getEmail(), String.format("%s/active/%s",localUrl,token));
     }
 
     /**

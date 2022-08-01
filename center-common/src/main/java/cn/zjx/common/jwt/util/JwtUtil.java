@@ -55,15 +55,14 @@ public class JwtUtil {
      * @param token
      * @return
      */
-    public boolean decodeToken(String token) {
-        boolean isSuccess = true;
+    public DecodedJWT decodeToken(String token) {
+        DecodedJWT decodedJWT = null;
         try {
-            DecodedJWT decodedJWT = JWT.require(Algorithm.HMAC256(flag)).build().verify(token);
+            decodedJWT = JWT.require(Algorithm.HMAC256(flag)).build().verify(token);
         } catch (Exception e) {
-            isSuccess = false;
             throw e;
-        } finally {
-            return isSuccess;
+        }finally {
+            return decodedJWT;
         }
     }
 }

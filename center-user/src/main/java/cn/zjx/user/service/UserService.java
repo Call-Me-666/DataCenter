@@ -43,7 +43,7 @@ public interface UserService {
      * 激活
      * @return
      */
-    RequestResult active(UserInfo userInfo);
+    RequestResult active(String token);
 
     void test();
 }

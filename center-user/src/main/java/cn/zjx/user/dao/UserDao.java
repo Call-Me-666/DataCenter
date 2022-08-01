@@ -24,26 +24,28 @@ public class UserDao {
     @Autowired
     UserMapper userMapper;
 
-    final String tableName = dbName+".t_user";
-
     public boolean register(UserInfo userInfo){
-        return userMapper.insert(tableName,userInfo);
+        return userMapper.insert(getTableName(),userInfo);
     }
 
     public UserInfo login(String name,String password){
-        UserInfo userInfo = userMapper.login(tableName,name,password);
+        UserInfo userInfo = userMapper.login(getTableName(),name,password);
         return userInfo;
     }
 
     public boolean duplicateName(String name){
-        return userMapper.duplicateName(tableName,name);
+        return userMapper.duplicateName(getTableName(),name);
     }
 
     public boolean logout(String uid){
-        return userMapper.delete(tableName,uid);
+        return userMapper.delete(getTableName(),uid);
     }
 
     public boolean active(String uid){
-        return userMapper.active(tableName,uid);
+        return userMapper.active(getTableName(),uid);
+    }
+
+    private String getTableName(){
+        return dbName+".t_user";
     }
 }
