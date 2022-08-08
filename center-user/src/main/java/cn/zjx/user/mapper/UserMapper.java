@@ -17,7 +17,7 @@ public interface UserMapper {
     //region insert
     @Insert("<script>" +
             "insert into ${tableName}(uid,name,password,phone,email,image,isActive) " +
-            "values(#{userInfo.uid},#{userInfo.name},#{userInfo.password},#{userInfo.email},#{userInfo.image},#{userInfo.isActive})" +
+            "values(#{userInfo.uid},#{userInfo.name},#{userInfo.password},#{userInfo.phone},#{userInfo.email},#{userInfo.image},#{userInfo.isActive})" +
             "</script>")
     boolean insert(String tableName,UserInfo userInfo);
     //endregion
