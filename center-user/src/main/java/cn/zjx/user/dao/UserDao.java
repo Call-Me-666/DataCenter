@@ -33,12 +33,16 @@ public class UserDao {
         return userInfo;
     }
 
-    public boolean duplicateName(String name){
-        return userMapper.duplicateName(getTableName(),name);
+    public boolean duplicateName(String name,String uid){
+        return userMapper.duplicateName(getTableName(),name,uid);
     }
 
-    public boolean logout(String uid){
+    public boolean unsubscribe(String uid){
         return userMapper.delete(getTableName(),uid);
+    }
+
+    public boolean update(UserInfo userInfo){
+        return userMapper.update(getTableName(),userInfo);
     }
 
     public boolean active(String uid){

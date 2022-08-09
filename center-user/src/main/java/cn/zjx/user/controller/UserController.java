@@ -30,6 +30,21 @@ public class UserController {
         return userService.active(token);
     }
 
+    @PostMapping("/login")
+    public RequestResult login(@RequestBody UserInfo userInfo){
+        return userService.login(userInfo);
+    }
+
+    @PostMapping("/unsubscribe")
+    public RequestResult unsubscribe(@RequestBody UserInfo userInfo) {
+        return userService.unsubscribe(userInfo);
+    }
+
+    @PostMapping("/update")
+    public RequestResult update(@RequestBody UserInfo userInfo){
+        return userService.update(userInfo);
+    }
+
     @GetMapping("/test")
     public void Test(){
         userService.test();

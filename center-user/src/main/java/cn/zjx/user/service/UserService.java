@@ -37,7 +37,7 @@ public interface UserService {
      * 注销用户
      * @return
      */
-    RequestResult logout();
+    RequestResult unsubscribe(UserInfo userInfo);
 
     /**
      * 激活

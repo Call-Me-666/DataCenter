@@ -39,8 +39,9 @@ public interface UserMapper {
 
     @Select("<script>" +
             "select count(uid) from ${tableName} where name =#{name} " +
+            "<if test='uid!=null'>and uid!=#{uid}</if>" +
             "</script>")
-    boolean duplicateName(String tableName,String name);
+    boolean duplicateName(String tableName,String name,String uid);
 
     //endregion
 
@@ -55,7 +56,7 @@ public interface UserMapper {
             "password = #{userInfo.password}," +
             "phone = #{userInfo.phone}," +
             "email = #{userInfo.email}," +
-            "image = #{userInfo.image}" +
+            "image = #{userInfo.image} " +
             "where uid = #{userInfo.uid}" +
             "</script>")
     boolean update(String tableName,UserInfo userInfo);

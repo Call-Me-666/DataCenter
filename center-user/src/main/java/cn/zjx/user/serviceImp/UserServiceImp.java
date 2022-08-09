@@ -20,6 +20,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,12 +40,17 @@ public class UserServiceImp implements UserService {
     @Autowired
     JwtUtil jwtUtil;
     @Autowired
-    JavaMailSender javaMailSender;
+    JavaMailSender javaMailSender;  // java邮件发送对象
     @Value("${spring.mail.username}")
     String myMail;
 
-    String localUrl;
+    String localUrl;    // 本地的访问地址
 
+    /**
+     * 用户注册
+     * @param userInfo 用户信息
+     * @return
+     */
     @Override
     public RequestResult register(UserInfo userInfo) {
         RequestResult requestResult = new RequestResult();
@@ -58,7 +64,7 @@ public class UserServiceImp implements UserService {
             return requestResult;
         }
         // 判断用户名是否重复
-        if(userDao.duplicateName(userInfo.getName())){
+        if(userDao.duplicateName(userInfo.getName(),null)){
             requestResult.setSuccess(false);
             requestResult.setMsg("用户名重复！！！");
             logger.warn("用户注册失败，用户名重复："+userInfo.getName());
@@ -82,6 +88,11 @@ public class UserServiceImp implements UserService {
         }
     }
 
+    /**
+     * 登录
+     * @param userInfo
+     * @return
+     */
     @Override
     public RequestResult login(UserInfo userInfo) {
         RequestResult requestResult = new RequestResult();
@@ -91,7 +102,6 @@ public class UserServiceImp implements UserService {
             String msg = "登录失败，用户不存在！！！";
             requestResult.setMsg(msg);
             logger.warn(msg);
-//            return requestResult;
         }else {
             // 如果用户已经激活就生成token返回
             // 用户未激活，就跳转到激活流程
@@ -108,7 +118,7 @@ public class UserServiceImp implements UserService {
                 requestResult.setResult(resultMap);
             }else{
                 requestResult.setSuccess(false);
-                requestResult.setMsg("登录失败，用户未激活，请先到邮箱中激活");
+                requestResult.setMsg("登录失败，用户未激活，激活邮件已经发送到邮箱，请先到邮箱中激活");
                 // 重新发送激活邮件
                 sendActiveEmail(user);
             }
@@ -116,26 +126,78 @@ public class UserServiceImp implements UserService {
         return requestResult;
     }
 
+    /**
+     * 修改用户信息
+     * @param userInfo
+     * @return
+     */
     @Override
     public RequestResult update(UserInfo userInfo) {
-        return null;
+        RequestResult requestResult = new RequestResult();
+        // 判断用户名、密码、邮箱
+        if(StringUtils.isBlank(userInfo.getName())||
+                StringUtils.isBlank(userInfo.getPassword())||
+                StringUtils.isBlank(userInfo.getEmail())){
+            requestResult.setSuccess(false);
+            requestResult.setMsg("用户名、密码、邮箱不能为空！！！");
+            logger.warn("用户修改失败，用户名、密码、邮箱为空！！！");
+            return requestResult;
+        }
+
+        // 判断用户名是否重复
+        if(userDao.duplicateName(userInfo.getName(),userInfo.getUid())){
+            requestResult.setSuccess(false);
+            requestResult.setMsg("用户名重复！！！");
+            logger.warn("用户修改失败，用户名重复："+userInfo.getName());
+            return requestResult;
+        }
+
+        if(userDao.update(userInfo)){
+            requestResult.setSuccess(true);
+            requestResult.setMsg("用户修改成功！！！");
+            requestResult.setResult(userInfo);
+            logger.info("用户修改成功，用户名重复："+userInfo.getName());
+        }else{
+            requestResult.setSuccess(true);
+            requestResult.setMsg("用户修改失败！！！");
+        }
+        return requestResult;
     }
 
+    /**
+     * 注销用户
+     * @param userInfo
+     * @return
+     */
     @Override
-    public RequestResult logout() {
-        return null;
+    public RequestResult unsubscribe(UserInfo userInfo) {
+        RequestResult requestResult = new RequestResult();
+        if(userInfo!=null&&StringUtils.isNotBlank(userInfo.getUid())){
+            boolean isSuccess = userDao.unsubscribe(userInfo.getUid());
+            requestResult.setSuccess(isSuccess);
+            requestResult.setMsg("用户注销成功");
+        }else{
+            requestResult.setSuccess(false);
+            requestResult.setMsg("用户信息不全，注销失败");
+        }
+        return requestResult;
     }
 
+    /**
+     * 用户激活
+     * @param token 用户token
+     * @return
+     */
     @Override
     public RequestResult active(String token) {
         UserInfo userInfo = null;
         DecodedJWT decodedJWT = jwtUtil.decodeToken(token);
-        if(decodedJWT==null){
+        if(decodedJWT!=null){
             Map<String, Claim> claims = decodedJWT.getClaims();
             userInfo = new UserInfo();
             userInfo.setUid(claims.get("uid").asString());
-            userInfo.setUid(claims.get("name").asString());
-            userInfo.setUid(claims.get("password").asString());
+            userInfo.setName(claims.get("name").asString());
+            userInfo.setPassword(claims.get("password").asString());
         }
         RequestResult requestResult = new RequestResult();
         if(userInfo!=null&&StringUtils.isNotBlank(userInfo.getUid())){
@@ -151,6 +213,8 @@ public class UserServiceImp implements UserService {
 
     /**
      * 发送激活链接到邮箱
+     * @param targetMail 目标邮件
+     * @param text 内容
      */
     private void sendEmail(String targetMail,String text){
         SimpleMailMessage message = new SimpleMailMessage();
@@ -177,7 +241,7 @@ public class UserServiceImp implements UserService {
         if(StringUtils.isBlank(localUrl)){
             localUrl = getServletUrl();
         }
-        sendEmail(userInfo.getEmail(), String.format("%s/active/%s",localUrl,token));
+        sendEmail(userInfo.getEmail(), String.format("%s/user/active/%s",localUrl,token));
     }
 
     /**
