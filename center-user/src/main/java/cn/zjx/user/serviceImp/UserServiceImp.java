@@ -156,7 +156,7 @@ public class UserServiceImp implements UserService {
             requestResult.setSuccess(true);
             requestResult.setMsg("用户修改成功！！！");
             requestResult.setResult(userInfo);
-            logger.info("用户修改成功，用户名重复："+userInfo.getName());
+            logger.info("用户修改成功，用户名："+userInfo.getName());
         }else{
             requestResult.setSuccess(true);
             requestResult.setMsg("用户修改失败！！！");
