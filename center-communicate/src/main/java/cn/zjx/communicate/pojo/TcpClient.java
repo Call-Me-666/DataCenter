@@ -110,12 +110,15 @@ public abstract class TcpClient implements ICommunicate, Runnable {
                             SocketChannel sc = (SocketChannel) key.channel();
                             ByteBuffer buffer = ByteBuffer.allocate(1024);
                             buffer.order(ByteOrder.LITTLE_ENDIAN);
-                            sc.read(buffer);
-                            buffer.flip();
-                            byte[] data = new byte[buffer.limit()];
-                            buffer.get(data);
-                            // 将数据输出
-                            receive(data);
+                            int count = sc.read(buffer);
+                            // 接收到的数大于0，才做处理
+                            if(count>0){
+                                buffer.flip();
+                                byte[] data = new byte[buffer.limit()];
+                                buffer.get(data);
+                                // 将数据输出
+                                receive(data);
+                            }
                         }
                     }
                     iterator.remove();
