@@ -93,6 +93,7 @@ public abstract class TcpClient implements ICommunicate, Runnable {
     @Override
     public void restart() {
         stop();
+        msgNotified("正在重启...",null);
         start();
     }
 
@@ -110,14 +111,20 @@ public abstract class TcpClient implements ICommunicate, Runnable {
                             SocketChannel sc = (SocketChannel) key.channel();
                             ByteBuffer buffer = ByteBuffer.allocate(1024);
                             buffer.order(ByteOrder.LITTLE_ENDIAN);
-                            int count = sc.read(buffer);
-                            // 接收到的数大于0，才做处理
-                            if(count>0){
-                                buffer.flip();
-                                byte[] data = new byte[buffer.limit()];
-                                buffer.get(data);
-                                // 将数据输出
-                                receive(data);
+                            try {
+                                // 如果服务端关闭了，在调用read函数时，就会报错，此处将read报错做为断开连接的依据
+                                int count = sc.read(buffer);
+                                // 接收到的数大于0，才做处理
+                                if(count>0){
+                                    buffer.flip();
+                                    byte[] data = new byte[buffer.limit()];
+                                    buffer.get(data);
+                                    // 将数据输出
+                                    receive(data);
+                                }
+                            }catch (Exception e){
+                                setStatusAndMsg(EnumStatus.UNSTART,"服务端"+sc.getRemoteAddress().toString()+"已断开连接",e);
+                                sc.close();
                             }
                         }
                     }

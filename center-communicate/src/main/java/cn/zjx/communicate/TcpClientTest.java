@@ -29,11 +29,11 @@ public class TcpClientTest {
             }
         };
         client.start();
-        client.start();
+//        client.start();
+//
+//        client.stop();
 
-        client.stop();
-
-        client.start();
+//        client.start();
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()){
