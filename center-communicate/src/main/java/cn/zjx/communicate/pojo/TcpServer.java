@@ -30,17 +30,7 @@ public abstract class TcpServer implements ICommunicate,Runnable {
             return;
         }
         isRun = true;
-        try {
-            selector = Selector.open();
-            channel = ServerSocketChannel.open();
-            channel.configureBlocking(false);
-            channel.bind(address);
-            channel.register(selector, SelectionKey.OP_ACCEPT);
-        } catch (IOException e) {
-            e.printStackTrace();
-            setStatusAndMsg(EnumStatus.UNSTART,"服务端已失败",e);
-        }
-        setStatusAndMsg(EnumStatus.STARTED,"服务端已启动",null);
+
         thread = null;
         thread = new Thread(this);
         thread.start();
@@ -52,7 +42,46 @@ public abstract class TcpServer implements ICommunicate,Runnable {
             return;
         }
         isRun = false;
+        // 停止selector.select()的阻塞
+        selector.wakeup();
+    }
+
+    /**
+     * 打开通道和选择器
+     */
+    private void open(){
         try {
+            selector = Selector.open();
+            channel = ServerSocketChannel.open();
+            channel.configureBlocking(false);
+            channel.bind(address);
+            channel.register(selector, SelectionKey.OP_ACCEPT);
+        } catch (IOException e) {
+            e.printStackTrace();
+            setStatusAndMsg(EnumStatus.UNSTART,"服务端已失败",e);
+        }
+        setStatusAndMsg(EnumStatus.STARTED,"服务端已启动",null);
+    }
+
+    /**
+     * 关闭通道和选择器
+     */
+    private void close(){
+        try {
+            // 关闭所有的客户端连接
+            selector.keys().forEach(p->{
+                if(p.channel() instanceof SocketChannel){
+                    SocketChannel sc = (SocketChannel) p.channel();
+                    try {
+                        // System.out.println("关闭了"+sc.getRemoteAddress()+"的连接");
+                        sc.socket().setSoLinger(true,0);
+                        sc.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            channel.socket().close();
             channel.close();
             selector.close();
         } catch (SocketException e) {
@@ -63,8 +92,6 @@ public abstract class TcpServer implements ICommunicate,Runnable {
         if(!channel.isOpen()){
             setStatusAndMsg(EnumStatus.UNSTART, "服务端已关闭", null);
         }
-        thread.interrupted();
-        thread = null;
     }
 
     @Override
@@ -76,13 +103,17 @@ public abstract class TcpServer implements ICommunicate,Runnable {
 
     @Override
     public void run() {
+        open();
+
         try{
             while(isRun){
+                // !!!!!!selector.select()是阻塞函数
+                // 需要调用wakeup()将selector唤醒才会在无触发事件的情况下停止阻塞
                 if(selector.select()>0){
                     Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
                     while(iterator.hasNext()){
                         SelectionKey selectionKey = iterator.next();
-                        // 如果是客户端连接，就
+                        // 如果是客户端连接，就获取到客户端通道，注册到selector中
                         if(selectionKey.isAcceptable()){
                             SocketChannel socketChannel = this.channel.accept();
                             socketChannel.configureBlocking(false);
@@ -113,11 +144,11 @@ public abstract class TcpServer implements ICommunicate,Runnable {
                     }
                     iterator.remove();
                 }
-                // 一秒检查一次
-                Thread.sleep(1*1000);
             }
         }catch (Exception e){
             e.printStackTrace();
+        }finally {
+            close();
         }
     }
 

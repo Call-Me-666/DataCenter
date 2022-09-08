@@ -28,16 +28,28 @@ public class TcpServerTest {
                 System.out.println(msg);
             }
         };
-        tcpServer.start();
-        tcpServer.stop();
-        tcpServer.start();
+//        tcpServer.start();
+//        tcpServer.stop();
+//        tcpServer.start();
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()){
             String text = scanner.nextLine();
-            try {
-                tcpServer.send(text.getBytes("UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            switch (text){
+                case "start":
+                    tcpServer.start();
+                    break;
+                case "stop":
+                    tcpServer.stop();
+                    break;
+                case "restart":
+                    tcpServer.restart();
+                    break;
+                default:
+                    try {
+                        tcpServer.send(text.getBytes("UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
             }
         }
     }
