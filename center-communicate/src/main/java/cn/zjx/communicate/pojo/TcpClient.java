@@ -41,6 +41,28 @@ public abstract class TcpClient implements ICommunicate, Runnable {
 //            msgNotified("客户端已启动",null);
             return;
         }
+        isRun = true;
+        thread = new Thread(this);
+        thread.start();
+    }
+
+
+
+    @Override
+    public void stop() {
+        if(!isRun){
+//            msgNotified("客户端已关闭",null);
+            return;
+        }
+        isRun = false;
+        // 停止selector.select()的阻塞
+        selector.wakeup();
+    }
+
+    /**
+     * 打开通道和选择器
+     */
+    private void open(){
         try {
             selector = Selector.open();
             channel = SocketChannel.open();
@@ -51,7 +73,7 @@ public abstract class TcpClient implements ICommunicate, Runnable {
             boolean isConnect = channel.connect(remoteAddress);
             while(!channel.finishConnect()){
                 setStatusAndMsg(EnumStatus.UNSTART, "连接服务端失败，正在重连。。。", null);
-                Thread.sleep(2*1000);
+                Thread.sleep(10*1000);
             }
             setStatusAndMsg(EnumStatus.STARTED, "已连接上服务端"+channel.getRemoteAddress().toString(), null);
 
@@ -60,22 +82,19 @@ public abstract class TcpClient implements ICommunicate, Runnable {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             setStatusAndMsg(EnumStatus.UNSTART, "启动失败，通道启动失败，请重启", e);
+            isRun = false;
         }
-        isRun = true;
-        thread = new Thread(this);
-        thread.start();
     }
 
-    @Override
-    public void stop() {
-        if(!isRun){
-//            msgNotified("客户端已关闭",null);
-            return;
-        }
-        isRun = false;
+    /**
+     * 关闭通道和选择器
+     */
+    private void close(){
         try {
             // 快速关闭socket,不然端口还是会在一定时间内被占用，状态会编程TIME_WAIT、FIN_WAIT_2
-            channel.socket().setSoLinger(true,0);
+            if(!channel.socket().isClosed()){
+                channel.socket().setSoLinger(true,0);
+            }
             channel.close();
             selector.close();
         } catch (SocketException e) {
@@ -86,8 +105,6 @@ public abstract class TcpClient implements ICommunicate, Runnable {
         if(!channel.isOpen()){
             setStatusAndMsg(EnumStatus.UNSTART, "客户端已关闭", null);
         }
-        thread.interrupted();
-        thread = null;
     }
 
     @Override
@@ -99,8 +116,12 @@ public abstract class TcpClient implements ICommunicate, Runnable {
 
     @Override
     public void run() {
-        while (isRun) {
-            try {
+        open();
+
+        try {
+            while (isRun) {
+                // !!!!!!selector.select()是阻塞函数
+                // 需要调用wakeup()将selector唤醒才会在无触发事件的情况下停止阻塞
                 if (selector.select() > 0) {
                     Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
                     while (iterator.hasNext()) {
@@ -124,16 +145,18 @@ public abstract class TcpClient implements ICommunicate, Runnable {
                                 }
                             }catch (Exception e){
                                 setStatusAndMsg(EnumStatus.UNSTART,"服务端"+sc.getRemoteAddress().toString()+"已断开连接",e);
-                                sc.close();
+                                isRun = false;
+                                break;
                             }
                         }
                     }
                     iterator.remove();
                 }
-                Thread.sleep(1 * 1000);
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            close();
         }
     }
 

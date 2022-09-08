@@ -28,7 +28,7 @@ public class TcpClientTest {
                 System.out.println(msg);
             }
         };
-        client.start();
+//        client.start();
 //        client.start();
 //
 //        client.stop();
@@ -38,10 +38,23 @@ public class TcpClientTest {
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()){
             String text = scanner.nextLine();
-            try {
-                client.send(text.getBytes("UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            switch (text){
+                case "start":
+                    client.start();
+                    break;
+                case "stop":
+                    client.stop();
+                    break;
+                case "restart":
+                    client.restart();
+                    break;
+                default:
+                    try {
+
+                        client.send(text.getBytes("UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
             }
         }
     }
